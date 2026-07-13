@@ -241,10 +241,34 @@ function uniqueOutputName(base: string, extension: string, usedNames: Set<string
   return candidate;
 }
 
-export async function zipMedia(files: File[], manifest: ExportItem[], convertToWebp: boolean, renameByDate = false) {
+export function uniqueExportOutputNames(outputNames: string[]) {
+  const usedNames = new Set<string>();
+  return outputNames.map((outputName) => uniqueOutputName(path.parse(outputName).name, path.extname(outputName), usedNames));
+}
+
+export async function prepareMediaExportFile(dir: string, file: File, item: ExportItem, index: number, convertToWebp: boolean, renameByDate: boolean) {
   const trace = traceFor("ZIP");
-  trace("Exportación", `${files.length} archivo(s); optimizar=${convertToWebp}; renombrar=${renameByDate}`);
-  const dir = await mkdtemp(path.join(tmpdir(), "luz-texto-export-"));
+  const source = path.join(dir, `source-${index}${extension(file)}`);
+  try {
+    await writeFile(source, Buffer.from(await file.arrayBuffer()));
+    const video = isVideo(file);
+    const convertMov = video && convertToWebp && path.extname(file.name).toLowerCase() === ".mov";
+    const outputExtension = convertMov ? ".mp4" : convertToWebp && !video && path.extname(file.name).toLowerCase() !== ".webp" ? ".webp" : path.extname(file.name);
+    const outputBase = renameByDate ? `IMG_${await capturedDateTime(source, item.fallbackDateTime)}` : path.parse(file.name).name;
+    const outputName = `${outputBase}${outputExtension}`;
+    const output = path.join(dir, `output-${index}${path.extname(outputName)}`);
+    trace("Exportación", `preparando ${file.name} → ${outputName}`);
+    if (video) await makeVideo(source, output, item, convertMov); else await makeImage(source, output, convertToWebp, item);
+    trace("Exportación", `${file.name}: metadatos escritos`);
+    return outputName;
+  } finally {
+    await rm(source, { force: true });
+  }
+}
+
+export async function createPreparedMediaZip(dir: string, outputNames: string[]) {
+  const trace = traceFor("ZIP");
+  trace("Exportación", `${outputNames.length} archivo(s) preparados; creando ZIP`);
   try {
     const archive = new archiverModule.ZipArchive({ zlib: { level: 8 } });
     const zipPath = path.join(dir, "luz-y-texto.zip");
@@ -255,31 +279,21 @@ export async function zipMedia(files: File[], manifest: ExportItem[], convertToW
       destination.on("error", reject);
       archive.on("error", reject);
     });
-    const usedNames = new Set<string>();
-    for (const [index, file] of files.entries()) {
-      const item = manifest[index]; if (!item) continue;
-      const source = path.join(dir, `source-${index}${extension(file)}`);
-      await writeFile(source, Buffer.from(await file.arrayBuffer()));
-      const video = isVideo(file);
-      const convertMov = video && convertToWebp && path.extname(file.name).toLowerCase() === ".mov";
-      const outputExtension = convertMov ? ".mp4" : convertToWebp && !video && path.extname(file.name).toLowerCase() !== ".webp" ? ".webp" : path.extname(file.name);
-      const outputBase = renameByDate ? `IMG_${await capturedDateTime(source, item.fallbackDateTime)}` : path.parse(file.name).name;
-      const outputName = uniqueOutputName(outputBase, outputExtension, usedNames);
-      const output = path.join(dir, `output-${index}${path.extname(outputName)}`);
-      trace("Exportación", `${index + 1}/${files.length}: preparando ${file.name} → ${outputName}`);
-      if (video) await makeVideo(source, output, item, convertMov); else await makeImage(source, output, convertToWebp, item);
-      trace("Exportación", `${index + 1}/${files.length}: metadatos escritos`);
-      archive.file(output, { name: outputName });
-    }
+    outputNames.forEach((outputName, index) => archive.file(path.join(dir, `output-${index}${path.extname(outputName)}`), { name: outputName }));
     await archive.finalize();
     await completed;
     trace("Exportación", "ZIP completado");
-    const stream = createReadStream(zipPath);
-    stream.on("close", () => { void rm(dir, { recursive: true, force: true }); });
-    return Readable.toWeb(stream) as ReadableStream;
   } catch (error) {
     trace("Exportación", `falló: ${error instanceof Error ? error.message.slice(-500) : String(error)}`);
     await rm(dir, { recursive: true, force: true });
     throw error;
   }
+}
+
+export function streamPreparedMediaZip(dir: string) {
+  const stream = createReadStream(path.join(dir, "luz-y-texto.zip"));
+  const cleanup = () => { void rm(dir, { recursive: true, force: true }); };
+  stream.on("close", cleanup);
+  stream.on("error", cleanup);
+  return Readable.toWeb(stream) as ReadableStream;
 }

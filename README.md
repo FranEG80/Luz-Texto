@@ -12,6 +12,7 @@ Puede trabajar con OpenAI o con un VLM ejecutado localmente en LM Studio. Los ar
 - Selección individual o masiva de los archivos que se quieren analizar y descargar.
 - Regeneración y reintento independientes por elemento.
 - Edición manual de título, caption y keywords antes de exportar.
+- Descarga inmediata de los metadatos generados en JSON, incluso con el lote todavía en curso.
 - Extracción de GPS y enriquecimiento opcional con ubicación y lugares cercanos.
 - Escritura de metadatos en las fotografías y los vídeos resultantes.
 - Optimización opcional a WebP y MP4.
@@ -25,10 +26,15 @@ Puede trabajar con OpenAI o con un VLM ejecutado localmente en LM Studio. Los ar
 3. Pulsa **Generar selección**. La aplicación analiza los elementos seleccionados de forma secuencial.
 4. Si algunos ya estaban listos, el botón cambia a **Completar selección** y procesa solo los pendientes. Cuando todos los seleccionados están terminados aparece **Selección completa** y el botón queda desactivado.
 5. Revisa y edita los resultados. **Regenerar** vuelve a analizar un único elemento; si falla, **Reintentar** repite ese análisis.
-6. Activa, si lo necesitas, **Optimizar archivos** o **Renombrar por fecha y hora**.
-7. Pulsa **Descargar N en ZIP**.
+6. Pulsa **Descargar JSON** en cualquier momento para guardar el progreso ya generado.
+7. Activa, si lo necesitas, **Optimizar archivos** o **Renombrar por fecha y hora**.
+8. Pulsa **Descargar N en ZIP**.
 
 Un elemento no seleccionado puede quedarse sin caption y no bloquea la descarga. El ZIP solo incluye los elementos seleccionados y se habilita cuando todos ellos tienen título y caption.
+
+Para admitir lotes grandes sin renunciar a la velocidad, la exportación prepara hasta cinco originales en paralelo y muestra el progreso en pantalla. Cada archivo viaja en una petición independiente para evitar multipart gigantes. Al finalizar crea un único ZIP y lo transmite directamente a la descarga, sin reunir antes todos los originales ni el ZIP completo en la memoria del navegador.
+
+El JSON contiene todos los elementos de la sesión, incluidos su estado y selección, los datos básicos del archivo, título, caption, keywords y cualquier error. No incluye el contenido binario de las fotos o vídeos y se puede descargar mientras continúa el análisis en segundo plano.
 
 Durante una generación puedes pulsar **Pausar**. El análisis en curso se cancela y los elementos que no hayan terminado permanecen disponibles para continuar después.
 
