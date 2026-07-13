@@ -127,7 +127,7 @@ async function readMetadata(source: string, trace?: Trace): Promise<ExtractedMet
 
 async function visionImage(source: string, output: string, trace?: Trace, label = "imagen") {
   trace?.("Visión", `${label}: ImageMagick iniciado`);
-  await run(process.env.MAGICK_PATH ?? "magick", [source, "-auto-orient", "-strip", "-resize", `${MAX_VISION_DIMENSION}x${MAX_VISION_DIMENSION}>`, "-quality", "82", output]);
+  await run(process.env.MAGICK_PATH ?? "magick", [source, "-auto-orient", "-strip", "-resize", `${MAX_VISION_DIMENSION}x${MAX_VISION_DIMENSION}>`, "-quality", "75", output]);
   trace?.("Visión", `${label}: WebP listo`);
 }
 
@@ -189,7 +189,7 @@ function metadataTags(item: ExportItem) {
   return {
     ImageDescription: item.caption, Description: item.caption, "Caption-Abstract": item.caption,
     Title: item.title, XPTitle: item.title, ObjectName: item.title,
-    Keywords: item.keywords, Subject: item.keywords, XPKeywords: item.keywords.join(";"),
+    "XMP-dc:Subject": item.keywords,
   };
 }
 
@@ -205,13 +205,20 @@ async function preservedImageTags(source: string) {
 
 async function makeImage(source: string, output: string, convertToWebp: boolean, item: ExportItem) {
   if (convertToWebp && path.extname(source).toLowerCase() !== ".webp") {
-    await run(process.env.MAGICK_PATH ?? "magick", [source, "-auto-orient", "-quality", "82", output]);
+    await run(process.env.MAGICK_PATH ?? "magick", [source, "-auto-orient", "-quality", "75", output]);
   } else await copyFile(source, output);
   await exiftool.write(output, { ...await preservedImageTags(source), ...metadataTags(item) }, ["-overwrite_original"]);
 }
 
 async function makeVideo(source: string, output: string, item: ExportItem, asMp4: boolean) {
-  await run(process.env.FFMPEG_PATH ?? "ffmpeg", ["-y", "-i", source, "-map", "0:v:0", "-map", "0:a:0?", "-map_metadata", "0", "-c", "copy", ...(asMp4 ? ["-tag:v", "hvc1", "-movflags", "+faststart+use_metadata_tags"] : []), "-metadata", `title=${item.title}`, "-metadata", `description=${item.caption}`, "-metadata", `comment=${item.caption}`, "-metadata", `keywords=${item.keywords.join(", ")}`, output]);
+  await run(process.env.FFMPEG_PATH ?? "ffmpeg", ["-y", "-i", source, "-map", "0:v:0", "-map", "0:a:0?", "-map_metadata", "0", "-c", "copy", ...(asMp4 ? ["-tag:v", "hvc1", "-movflags", "+faststart+use_metadata_tags"] : []), output]);
+  await exiftool.write(output, {}, [
+    `-Keys:DisplayName=${item.title}`,
+    `-Keys:Title=${item.title}`,
+    `-Keys:Description=${item.caption}`,
+    `-Keys:Keywords=${item.keywords.join(", ")}`,
+    "-overwrite_original",
+  ]);
 }
 
 function dateTimeName(value: unknown) {

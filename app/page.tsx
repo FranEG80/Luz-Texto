@@ -27,7 +27,7 @@ async function thumbnailFor(file: File) {
     const scale = Math.min(480 / image.width, 480 / image.height, 1);
     const canvas = document.createElement("canvas"); canvas.width = Math.max(1, Math.round(image.width * scale)); canvas.height = Math.max(1, Math.round(image.height * scale));
     canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height); image.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.75));
     return URL.createObjectURL(blob ?? file);
   } catch { return URL.createObjectURL(file); }
 }

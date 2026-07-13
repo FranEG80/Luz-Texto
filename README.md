@@ -42,9 +42,9 @@ Durante una generación puedes pulsar **Pausar**. El análisis en curso se cance
 
 | Entrada | Análisis visual | Sin optimización | Con optimización |
 | --- | --- | --- | --- |
-| HEIC / HEIF | Copia WebP interna | Conserva su formato | WebP, calidad 82 |
-| JPEG / JPG | Copia WebP interna | Conserva su formato | WebP, calidad 82 |
-| PNG | Copia WebP interna | Conserva su formato | WebP, calidad 82 |
+| HEIC / HEIF | Copia WebP interna | Conserva su formato | WebP, calidad 75 |
+| JPEG / JPG | Copia WebP interna | Conserva su formato | WebP, calidad 75 |
+| PNG | Copia WebP interna | Conserva su formato | WebP, calidad 75 |
 | WebP | Copia WebP interna | Conserva su formato | Se conserva sin recomprimir |
 | MOV | Fotogramas al 20 %, 50 % y 80 % | MOV | MP4 sin recodificar audio ni vídeo |
 | MP4 | Fotogramas al 20 %, 50 % y 80 % | MP4 | Se conserva como MP4 sin recodificar |
@@ -72,11 +72,11 @@ En fotografías se escriben variantes compatibles de:
 
 - Caption: `ImageDescription`, `Description` y `Caption-Abstract`.
 - Título: `Title`, `XPTitle` y `ObjectName`.
-- Keywords: `Keywords`, `Subject` y `XPKeywords`.
+- Keywords: `XMP-dc:Subject`, como lista única para evitar duplicados en Finder.
 
 Además, se preservan cuando existen la fecha de captura, fabricante, cámara, objetivo, ISO, apertura, exposición, distancia focal, GPS y valoración.
 
-En MOV y MP4 se escriben `title`, `description`, `comment` y `keywords`. FFmpeg copia los streams de vídeo y audio, junto con los metadatos de origen, por lo que no hay una recodificación del contenido audiovisual.
+En MOV y MP4 se escriben `DisplayName`, `Title`, `Description` y `Keywords` en el espacio `QuickTime Keys`, compatible con las aplicaciones multimedia de Apple. FFmpeg copia los streams de vídeo y audio, junto con los metadatos de origen, por lo que no hay una recodificación del contenido audiovisual.
 
 Si el archivo ya tiene título o keywords, esos valores tienen prioridad sobre la propuesta del modelo. El caption sí se genera y todos los campos se pueden corregir en la interfaz.
 
