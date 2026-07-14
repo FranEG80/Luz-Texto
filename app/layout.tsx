@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Luz & Texto",
-  description: "Convierte imágenes en captions claros y accesibles.",
+  title: "MediaTagOptimizer",
+  description: "Cataloga fotos y vídeos con títulos, descripciones y palabras clave.",
+  icons: { icon: "/media-tag-optimizer.png", apple: "/media-tag-optimizer.png" },
 };
 
 export default function RootLayout({

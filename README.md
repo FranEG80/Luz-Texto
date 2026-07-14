@@ -1,4 +1,4 @@
-# Luz & Texto
+# MediaTagOptimizer
 
 Aplicación web para catalogar lotes de fotos y vídeos con ayuda de un modelo de visión o multimodal. Genera un título, una descripción y palabras clave para cada archivo, permite revisarlos y los incrusta en los medios antes de descargarlos en un único ZIP.
 
@@ -51,7 +51,7 @@ Durante una generación puedes pulsar **Pausar**. El análisis en curso se cance
 
 La copia visual enviada al modelo nunca sustituye al archivo descargado. En imágenes se aplica la orientación EXIF, se eliminan los metadatos de esa copia y se limita su lado mayor a 2048 píxeles de forma predeterminada. La conversión final a WebP no reduce la resolución original.
 
-La descarga se llama `luz-y-texto-YYYY-MM-DD.zip`. No se añade un JSON auxiliar: los datos se escriben dentro de los propios archivos.
+La descarga se llama `media-tag-optimizer-YYYY-MM-DD.zip`. No se añade un JSON auxiliar: los datos se escriben dentro de los propios archivos.
 
 ### Renombrado por fecha y hora
 

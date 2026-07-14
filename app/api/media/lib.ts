@@ -278,7 +278,7 @@ export async function createPreparedMediaZip(dir: string, outputNames: string[])
   trace("Exportación", `${outputNames.length} archivo(s) preparados; creando ZIP`);
   try {
     const archive = new archiverModule.ZipArchive({ zlib: { level: 8 } });
-    const zipPath = path.join(dir, "luz-y-texto.zip");
+    const zipPath = path.join(dir, "media-tag-optimizer.zip");
     const destination = createWriteStream(zipPath);
     archive.pipe(destination);
     const completed = new Promise<void>((resolve, reject) => {
@@ -298,7 +298,7 @@ export async function createPreparedMediaZip(dir: string, outputNames: string[])
 }
 
 export function streamPreparedMediaZip(dir: string) {
-  const stream = createReadStream(path.join(dir, "luz-y-texto.zip"));
+  const stream = createReadStream(path.join(dir, "media-tag-optimizer.zip"));
   const cleanup = () => { void rm(dir, { recursive: true, force: true }); };
   stream.on("close", cleanup);
   stream.on("error", cleanup);
