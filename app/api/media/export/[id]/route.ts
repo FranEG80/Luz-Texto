@@ -15,7 +15,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const index = typeof rawIndex === "string" ? Number(rawIndex) : Number.NaN;
   if (!(media instanceof File) || !Number.isInteger(index)) return error(400, "El archivo de exportación no es válido.");
   const supported = IMAGE_TYPES.has(media.type) || VIDEO_TYPES.has(media.type) || /\.(heic|heif|jpe?g|png|webp|mov|mp4)$/i.test(media.name);
-  const maximum = (VIDEO_TYPES.has(media.type) || /\.(mov|mp4)$/i.test(media.name) ? 500 : 50) * 1024 * 1024;
+  const maximum = (VIDEO_TYPES.has(media.type) || /\.(mov|mp4)$/i.test(media.name) ? 500 : 75) * 1024 * 1024;
   if (!supported) return error(400, "Formato no admitido.");
   if (media.size > maximum) return error(413, "El archivo supera el tamaño permitido.");
   try {

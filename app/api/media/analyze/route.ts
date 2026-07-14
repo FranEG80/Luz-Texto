@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   if (!(media instanceof File)) { trace("petición rechazada", "archivo no válido"); return error(400, "Selecciona un archivo válido.", id); }
   trace("archivo recibido", `${media.name}; ${media.size} bytes`);
   const supported = IMAGE_TYPES.has(media.type) || VIDEO_TYPES.has(media.type) || /\.(heic|heif|jpe?g|png|webp|mov|mp4)$/i.test(media.name);
-  const maximum = (VIDEO_TYPES.has(media.type) || /\.(mov|mp4)$/i.test(media.name) ? 500 : 50) * 1024 * 1024;
+  const maximum = (VIDEO_TYPES.has(media.type) || /\.(mov|mp4)$/i.test(media.name) ? 500 : 75) * 1024 * 1024;
   if (!supported) { trace("petición rechazada", "formato no admitido"); return error(400, "Formato no admitido.", id); }
   if (media.size > maximum) { trace("petición rechazada", "archivo demasiado grande"); return error(413, "El archivo supera el tamaño permitido.", id); }
   try {
