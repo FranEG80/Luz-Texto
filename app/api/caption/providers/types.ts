@@ -1,4 +1,4 @@
-export type CaptionProviderName = "openai" | "lmstudio";
+export type CaptionProviderName = "openai" | "lmstudio" | "qwen";
 
 export type GenerateCaptionInput = {
   prompt: string;

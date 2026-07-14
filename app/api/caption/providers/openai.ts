@@ -13,8 +13,10 @@ class OpenAICaptionProvider extends BaseCaptionProvider {
       const response = await this.client.responses.parse({
         model: this.model,
         store: false,
-        reasoning: { effort: "none" },
-        max_output_tokens: 120,
+        // GPT-5.6 uses `medium` reasoning by default. This request only needs a
+        // short, schema-constrained description, so reserve the token budget for it.
+        ...(this.model.startsWith("gpt-5.") ? { reasoning: { effort: "none" as const } } : {}),
+        max_output_tokens: 256,
         text: { format: zodTextFormat(GeneratedMetadataSchema, "image_metadata") },
         input: [
           {
@@ -29,7 +31,11 @@ class OpenAICaptionProvider extends BaseCaptionProvider {
 
       console.info(`[openai:${traceId ?? "request"}] respuesta recibida · ${((Date.now() - startedAt) / 1000).toFixed(1)} s`);
 
-      return this.metadata(response.output_parsed);
+      const metadata = this.metadata(response.output_parsed);
+      if (metadata) return metadata;
+
+      const detail = response.incomplete_details?.reason ?? response.error?.message ?? `estado ${response.status}`;
+      throw new Error(`OpenAI no devolvió metadatos estructurados (${detail}).`);
   }
 }
 

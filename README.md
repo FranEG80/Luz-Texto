@@ -132,6 +132,16 @@ OPENAI_MODEL=gpt-5.6-luna
 
 `OPENAI_API_KEY` es obligatoria en este modo. El modelo debe aceptar imágenes y respuestas estructuradas.
 
+### Qwen 3.7 Plus mediante OpenRouter
+
+```env
+CAPTION_PROVIDER=qwen
+OPENROUTER_API_KEY=tu-clave
+OPENROUTER_MODEL=qwen/qwen3.7-plus
+```
+
+El adaptador usa la API de OpenRouter y exige salida JSON conforme al esquema de caption, título y etiquetas. Qwen 3.7 Plus acepta imágenes como entrada; `OPENROUTER_MODEL` es opcional y permite sustituir el modelo sin cambiar código.
+
 ### Modelos recomendados
 
 Estas recomendaciones sirven para el caso de uso de la aplicación: describir una imagen, devolver un JSON breve y generar títulos y keywords en español. Elige siempre un modelo con entrada de imagen; un LLM solo de texto no podrá analizar los archivos.
@@ -169,9 +179,11 @@ Todas las opciones disponibles están documentadas en [`.env.example`](./.env.ex
 
 | Variable | Valor predeterminado | Uso |
 | --- | --- | --- |
-| `CAPTION_PROVIDER` | `openai` | Proveedor: `openai` o `lmstudio`. |
+| `CAPTION_PROVIDER` | `openai` | Proveedor: `openai`, `lmstudio` o `qwen`. |
 | `OPENAI_API_KEY` | — | Clave obligatoria al usar OpenAI. |
 | `OPENAI_MODEL` | `gpt-5.6-luna` | Modelo de visión de OpenAI. |
+| `OPENROUTER_API_KEY` | — | Clave obligatoria al usar el proveedor Qwen mediante OpenRouter. |
+| `OPENROUTER_MODEL` | `qwen/qwen3.7-plus` | Modelo de visión usado por el proveedor Qwen. |
 | `LM_STUDIO_BASE_URL` | `http://127.0.0.1:1234/v1` | Dirección del servidor de LM Studio. |
 | `LM_STUDIO_MODEL` | — | Identificador obligatorio del VLM local. |
 | `LM_STUDIO_API_KEY` | — | Clave opcional si el servidor local la exige. |

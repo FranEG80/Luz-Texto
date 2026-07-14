@@ -33,6 +33,12 @@ function number(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+function modelForProvider(provider: string) {
+  if (provider === "lmstudio") return process.env.LM_STUDIO_MODEL;
+  if (provider === "qwen") return process.env.OPENROUTER_MODEL ?? "qwen/qwen3.7-plus";
+  return process.env.OPENAI_MODEL;
+}
+
 function nearbyPois(value: unknown) {
   if (!Array.isArray(value)) return [];
 
@@ -202,7 +208,7 @@ export async function POST(request: Request) {
         code: "CAPTION_EMPTY",
         message: "El proveedor no devolvió un caption válido.",
         provider: name,
-        model: name === "lmstudio" ? process.env.LM_STUDIO_MODEL : process.env.OPENAI_MODEL,
+        model: modelForProvider(name),
         filename: image.name,
       });
       return errorResponse(502, "CAPTION_FAILED", "No se ha recibido un caption válido.", true, id);
@@ -228,10 +234,7 @@ export async function POST(request: Request) {
       code: apiError?.code ?? "CAPTION_FAILED",
       message: detail,
       provider: process.env.CAPTION_PROVIDER ?? "openai",
-      model:
-        process.env.CAPTION_PROVIDER === "lmstudio"
-          ? process.env.LM_STUDIO_MODEL
-          : process.env.OPENAI_MODEL,
+      model: modelForProvider(process.env.CAPTION_PROVIDER ?? "openai"),
       filename: image.name,
     });
     return errorResponse(
