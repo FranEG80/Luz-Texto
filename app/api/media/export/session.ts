@@ -11,6 +11,13 @@ export type ExportSession = {
   createdAt: string;
 };
 
+export type ExportResult = {
+  outputName: string;
+  capturedAt?: string;
+  capturedAtSource: "metadata" | "fallback";
+  originalModifiedAt?: string;
+};
+
 const ROOT = path.join(tmpdir(), "luz-texto-export-sessions");
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_SESSION_AGE = 24 * 60 * 60 * 1000;
@@ -52,21 +59,21 @@ export async function saveExportSession(id: string, session: ExportSession) {
 }
 
 function exportResultPath(id: string, index: number) {
-  if (!Number.isInteger(index) || index < 0 || index >= 200) throw new Error("Índice de exportación no válido.");
+  if (!Number.isInteger(index) || index < 0 || index >= 300) throw new Error("Índice de exportación no válido.");
   return path.join(exportSessionDirectory(id), `result-${index}.json`);
 }
 
 export async function loadExportResult(id: string, index: number) {
   try {
-    return JSON.parse(await readFile(exportResultPath(id, index), "utf8")) as { outputName: string };
+    return JSON.parse(await readFile(exportResultPath(id, index), "utf8")) as ExportResult;
   } catch (cause) {
     if ((cause as NodeJS.ErrnoException).code === "ENOENT") return undefined;
     throw cause;
   }
 }
 
-export async function saveExportResult(id: string, index: number, outputName: string) {
-  await writeFile(exportResultPath(id, index), JSON.stringify({ outputName }));
+export async function saveExportResult(id: string, index: number, result: ExportResult) {
+  await writeFile(exportResultPath(id, index), JSON.stringify(result));
 }
 
 export async function loadExportResults(id: string, total: number) {

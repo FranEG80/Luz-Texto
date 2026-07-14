@@ -23,8 +23,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const item = session.manifest[index];
     if (!item || index < 0 || media.name !== item.filename) return error(400, "El archivo no coincide con el manifiesto de exportación.");
     if (await loadExportResult(id, index)) return Response.json({ completed: index + 1, total: session.manifest.length });
-    const outputName = await prepareMediaExportFile(exportSessionDirectory(id), media, item, index, session.convertToWebp, session.renameByDate);
-    await saveExportResult(id, index, outputName);
+    const result = await prepareMediaExportFile(exportSessionDirectory(id), media, item, index, session.convertToWebp, session.renameByDate);
+    await saveExportResult(id, index, result);
     return Response.json({ completed: index + 1, total: session.manifest.length });
   } catch (cause) {
     console.error(`[media-export:${id}:item:${index}]`, cause);

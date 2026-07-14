@@ -221,7 +221,7 @@ Los errores persistidos en `logs/caption-errors.ndjson` no incluyen imágenes ni
 
 ## Límites
 
-- Hasta 200 archivos en una sesión de la interfaz.
+- Hasta 300 archivos en una sesión de la interfaz.
 - Hasta 75 MB por fotografía.
 - Hasta 500 MB por vídeo.
 - Hasta 10 keywords por elemento.

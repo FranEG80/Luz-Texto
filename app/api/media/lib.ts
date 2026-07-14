@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createReadStream, createWriteStream } from "node:fs";
-import { copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
@@ -18,7 +18,7 @@ let nominatimQueue = Promise.resolve();
 export type MediaKind = "image" | "video";
 export type ExtractedMetadata = { title: string; keywords: string[]; context?: string };
 export type AnalysisResult = GeneratedMetadata & { kind: MediaKind; previewDataUrl?: string };
-export type ExportItem = { id: string; filename: string; caption: string; title: string; keywords: string[]; fallbackDateTime?: string };
+export type ExportItem = { id: string; filename: string; caption: string; title: string; keywords: string[]; fallbackDateTime?: string; originalModifiedAt?: string };
 type Trace = (stage: string, detail?: string) => void;
 
 function traceFor(filename: string): Trace {
@@ -236,9 +236,24 @@ function dateTimeName(value: unknown) {
 async function capturedDateTime(source: string, fallback = "sin_fecha") {
   const metadata = await exiftool.read(source);
   for (const value of [metadata.SubSecDateTimeOriginal, metadata.DateTimeOriginal, metadata.CreationDate, metadata.CreateDate, metadata.MediaCreateDate]) {
-    const formatted = dateTimeName(value); if (formatted) return formatted;
+    const formatted = dateTimeName(value);
+    if (formatted) return { dateTime: formatted, source: "metadata" as const };
   }
-  return fallback;
+  return { dateTime: fallback, source: "fallback" as const };
+}
+
+function isoDateTime(value: string) {
+  const compact = value.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})$/);
+  if (compact) return `${compact[1]}-${compact[2]}-${compact[3]}T${compact[4]}:${compact[5]}:${compact[6]}`;
+  const expanded = value.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+  return expanded ? `${expanded[1]}-${expanded[2]}-${expanded[3]}T${expanded[4]}:${expanded[5]}:${expanded[6]}` : undefined;
+}
+
+async function preserveModifiedAt(output: string, value?: string) {
+  if (!value) return;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return;
+  await utimes(output, date, date);
 }
 
 function uniqueOutputName(base: string, extension: string, usedNames: Set<string>) {
@@ -261,19 +276,22 @@ export async function prepareMediaExportFile(dir: string, file: File, item: Expo
     const video = isVideo(file);
     const convertMov = video && convertToWebp && path.extname(file.name).toLowerCase() === ".mov";
     const outputExtension = convertMov ? ".mp4" : convertToWebp && !video && path.extname(file.name).toLowerCase() !== ".webp" ? ".webp" : path.extname(file.name);
-    const outputBase = renameByDate ? `IMG_${await capturedDateTime(source, item.fallbackDateTime)}` : path.parse(file.name).name;
+    const captured = await capturedDateTime(source, item.fallbackDateTime);
+    const outputBase = renameByDate ? `IMG_${captured.dateTime}` : path.parse(file.name).name;
     const outputName = `${outputBase}${outputExtension}`;
     const output = path.join(dir, `output-${index}${path.extname(outputName)}`);
     trace("Exportación", `preparando ${file.name} → ${outputName}`);
     if (video) await makeVideo(source, output, item, convertMov); else await makeImage(source, output, convertToWebp, item);
+    const originalModifiedAt = item.originalModifiedAt ?? isoDateTime(item.fallbackDateTime ?? "");
+    await preserveModifiedAt(output, originalModifiedAt);
     trace("Exportación", `${file.name}: metadatos escritos`);
-    return outputName;
+    return { outputName, capturedAt: isoDateTime(captured.dateTime), capturedAtSource: captured.source, originalModifiedAt };
   } finally {
     await rm(source, { force: true });
   }
 }
 
-export async function createPreparedMediaZip(dir: string, outputNames: string[]) {
+export async function createPreparedMediaZip(dir: string, outputNames: string[], manifest: unknown) {
   const trace = traceFor("ZIP");
   trace("Exportación", `${outputNames.length} archivo(s) preparados; creando ZIP`);
   try {
@@ -287,6 +305,7 @@ export async function createPreparedMediaZip(dir: string, outputNames: string[])
       archive.on("error", reject);
     });
     outputNames.forEach((outputName, index) => archive.file(path.join(dir, `output-${index}${path.extname(outputName)}`), { name: outputName }));
+    archive.append(`${JSON.stringify(manifest, null, 2)}\n`, { name: "media-tag-optimizer.json" });
     await archive.finalize();
     await completed;
     trace("Exportación", "ZIP completado");

@@ -7,7 +7,7 @@ import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "r
 type Status = "queued" | "processing" | "done" | "error";
 type Item = { id: string; file: File; filename: string; thumbnailUrl: string; previewIsImage: boolean; kind: "image" | "video"; status: Status; selected: boolean; caption: string; title: string; keywords: string[]; error?: string };
 
-const MAX_ITEMS = 200;
+const MAX_ITEMS = 300;
 const EXPORT_BATCH_SIZE = 5;
 const ANALYSIS_RETRY_DELAY_MS = 1_000;
 const MAX_ANALYSIS_ATTEMPTS = 3;
@@ -161,7 +161,7 @@ export default function Home() {
     exportInFlight.current = true; setExporting(true); setNotice("Creando ZIP y escribiendo metadatos…");
     let exportId: string | undefined;
     try {
-      const manifest = selectedItems.map(({ id, file, filename, caption, title, keywords }) => ({ id, filename, caption, title, keywords, fallbackDateTime: fileDateTime(file) }));
+      const manifest = selectedItems.map(({ id, file, filename, caption, title, keywords }) => ({ id, filename, caption, title, keywords, fallbackDateTime: fileDateTime(file), originalModifiedAt: new Date(file.lastModified).toISOString() }));
       const started = await fetch("/api/media/export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ manifest, convertToWebp, renameByDate }) });
       const startData = await started.json().catch(() => ({})) as { id?: string; error?: { message?: string } };
       if (!started.ok || !startData.id) throw new Error(startData.error?.message ?? "No se ha podido iniciar la exportación.");
